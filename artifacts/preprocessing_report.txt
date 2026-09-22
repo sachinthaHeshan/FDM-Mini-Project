@@ -1,0 +1,101 @@
+IT3051 preprocessing report — loan default classification
+
+1. Problem
+   Predict whether a loan applicant will default, so a credit officer can
+   approve, review, or price the application before funds are released.
+   Task: binary classification. Target: Default (1 = default, 0 = no default).
+
+2. Data quality
+   Rows loaded: 255347
+   Missing cells: 0
+   Exact duplicate rows: 0
+   Duplicate LoanID values: 0
+   Rows failing domain checks: 0
+   Rows after cleaning: 255347
+   MonthsEmployed = 0 (kept; new or not-yet-started employment): 2122
+   Domain checks: age 18-100, income and loan amount > 0, credit score 300-850,
+   months employed >= 0, interest rate in (0, 100), DTI ratio in [0, 1.5],
+   loan term in {12, 24, 36, 48, 60}, categories restricted to known labels,
+   target restricted to {0, 1}.
+
+3. Class balance (after the split, so the test labels are only counted here)
+   Train default rate: 0.1161 (23722 / 204277)
+   Test default rate:  0.1161 (5931 / 51070)
+   About 11.6% of loans default. The classes are imbalanced.
+   Resampling is not done in preprocessing. Balancing belongs inside model
+   training (for example class_weight='balanced'), and must happen on each
+   training fold only. Doing it here would distort probabilities and can leak
+   across cross-validation folds.
+
+4. Outliers (fences computed on the training split)
+  Age: min=18, max=69, IQR fences=[-6.5, 93.5], outside=0
+  Income: min=1.5e+04, max=1.5e+05, IQR fences=[-5.223e+04, 2.173e+05], outside=0
+  LoanAmount: min=5000, max=2.5e+05, IQR fences=[-1.186e+05, 3.736e+05], outside=0
+  CreditScore: min=300, max=849, IQR fences=[24.5, 1124], outside=0
+  MonthsEmployed: min=0, max=119, IQR fences=[-60, 180], outside=0
+  NumCreditLines: min=1, max=4, IQR fences=[-1, 7], outside=0
+  InterestRate: min=2, max=25, IQR fences=[-9.46, 36.46], outside=0
+  LoanTerm: min=12, max=60, IQR fences=[-12, 84], outside=0
+  DTIRatio: min=0.1, max=0.9, IQR fences=[-0.3, 1.3], outside=0
+  loan_to_income: min=0.03375, max=16.53, IQR fences=[-2.003, 5.477], outside=15955
+  estimated_monthly_payment: min=90.8, max=2.37e+04, IQR fences=[-5118, 1.47e+04], outside=14303
+  payment_to_income: min=0.008192, max=18.09, IQR fences=[-1.261, 2.997], outside=16009
+   Cells changed by the training-fitted IQR cap during fit: 46267
+   Values already sit inside realistic bounds (age, income, credit score, and
+   so on). Statistical outliers are not deleted. High loan amounts and high
+   interest rates are plausible and are part of the risk signal.
+
+5. Feature engineering (each row uses only its own values)
+   loan_to_income = LoanAmount / Income
+   estimated_monthly_payment = amortising payment from amount, rate, and term
+   payment_to_income = estimated_monthly_payment / (Income / 12)
+   MonthsEmployed / 12 was not added. After standard scaling it is identical
+   to MonthsEmployed, so it would be a duplicated column.
+
+6. Encoding and scaling (fitted on the training split only)
+   Numeric: median impute, IQR cap, then StandardScaler.
+   Yes/No fields (HasMortgage, HasDependents, HasCoSigner): Yes=1, No=0.
+   They are imputed with the training mode and are not scaled.
+   Education: ordered High School < Bachelor's < Master's < PhD, then scaled.
+   The order is the education ladder, not a ranking fitted from the target.
+   EmploymentType, MaritalStatus, LoanPurpose: mode impute, then one-hot.
+   Unknown categories at scoring time become an all-zero dummy vector.
+   Full one-hot coding is kept so each category remains visible. Linear models
+   in the next stage should use regularisation, which sklearn logistic
+   regression does by default.
+
+7. Feature selection (training split only)
+   Numeric feature kept when |Pearson r| with Default >= 0.01.
+   Categorical feature kept when the default-rate gap across its levels >= 1%.
+   Numeric pairs with |r| > 0.98 would keep only the stronger one.
+   LoanID is always removed. It is a unique application key, not a property of
+   the borrower, and it cannot be known for a new applicant in a useful way.
+   Selected columns:
+     numeric: ['Age', 'Income', 'LoanAmount', 'CreditScore', 'MonthsEmployed', 'NumCreditLines', 'InterestRate', 'DTIRatio', 'loan_to_income', 'estimated_monthly_payment', 'payment_to_income']
+     binary:  ['HasMortgage', 'HasDependents', 'HasCoSigner']
+     ordinal: ['Education']
+     nominal: ['EmploymentType', 'MaritalStatus', 'LoanPurpose']
+   Dropped columns: ['LoanTerm']
+   LoanTerm stays an input to the system. It is used to calculate the monthly
+   payment features, then left out of the model matrix because the term itself
+   does not change the default rate.
+   Per-feature evidence is in artifacts/feature_selection.csv.
+
+8. Leakage controls
+   - LoanID is not a model feature.
+   - The 80/20 split is stratified on Default and is done before imputation,
+     scaling, one-hot levels, outlier fences, and feature selection.
+   - Engineered ratios use only the current row.
+   - The target is not used to build features (no target encoding).
+   - The saved preprocessor is fit on training rows and applied to the test rows.
+
+9. Split and outputs
+   test_size=0.2, random_state=42, stratify=Default
+   Train rows: 204277
+   Test rows:  51070
+   Model matrix columns (27): ['Age', 'Income', 'LoanAmount', 'CreditScore', 'MonthsEmployed', 'NumCreditLines', 'InterestRate', 'DTIRatio', 'loan_to_income', 'estimated_monthly_payment', 'payment_to_income', 'HasMortgage', 'HasDependents', 'HasCoSigner', 'Education', 'EmploymentType_Full-time', 'EmploymentType_Part-time', 'EmploymentType_Self-employed', 'EmploymentType_Unemployed', 'MaritalStatus_Divorced', 'MaritalStatus_Married', 'MaritalStatus_Single', 'LoanPurpose_Auto', 'LoanPurpose_Business', 'LoanPurpose_Education', 'LoanPurpose_Home', 'LoanPurpose_Other']
+
+10. Fair-lending note
+   Age and marital status are predictive here, and they are also sensitive in
+   real credit decisions. They are retained for this academic task. A production
+   lending model would need a fairness review before those fields were used.

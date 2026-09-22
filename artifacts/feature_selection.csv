@@ -1,0 +1,20 @@
+feature,kind,score,detail,keep,reason
+loan_to_income,numeric,0.17833839149264152,pearson_r=0.178338,True,Kept: association with Default is above the practical cutoff.
+Age,numeric,0.16629918835441995,pearson_r=-0.166299,True,Kept: association with Default is above the practical cutoff.
+payment_to_income,numeric,0.1520616886200194,pearson_r=0.152062,True,Kept: association with Default is above the practical cutoff.
+InterestRate,numeric,0.13136184669720902,pearson_r=0.131362,True,Kept: association with Default is above the practical cutoff.
+Income,numeric,0.09875898287734892,pearson_r=-0.098759,True,Kept: association with Default is above the practical cutoff.
+MonthsEmployed,numeric,0.0963845367564122,pearson_r=-0.096385,True,Kept: association with Default is above the practical cutoff.
+LoanAmount,numeric,0.0863719051827358,pearson_r=0.086372,True,Kept: association with Default is above the practical cutoff.
+estimated_monthly_payment,numeric,0.07074465396360025,pearson_r=0.070745,True,Kept: association with Default is above the practical cutoff.
+EmploymentType,nominal,0.040881840370660005,"default_rate_gap=Full-time=0.0946, Part-time=0.1191, Self-employed=0.1153, Unemployed=0.1355",True,Kept: association with Default is above the practical cutoff.
+CreditScore,numeric,0.034753317278043164,pearson_r=-0.034753,True,Kept: association with Default is above the practical cutoff.
+NumCreditLines,numeric,0.02816830949495321,pearson_r=0.028168,True,Kept: association with Default is above the practical cutoff.
+HasCoSigner,binary,0.024003586757507148,"default_rate_gap=No=0.1281, Yes=0.1041",True,Kept: association with Default is above the practical cutoff.
+HasDependents,binary,0.022929052884600135,"default_rate_gap=No=0.1276, Yes=0.1047",True,Kept: association with Default is above the practical cutoff.
+Education,ordinal,0.022198717600100323,"default_rate_gap=Bachelor's=0.1206, High School=0.1285, Master's=0.1089, PhD=0.1063",True,Kept: association with Default is above the practical cutoff.
+LoanPurpose,nominal,0.021624310710899083,"default_rate_gap=Auto=0.1184, Business=0.1241, Education=0.1184, Home=0.1025, Other=0.1172",True,Kept: association with Default is above the practical cutoff.
+DTIRatio,numeric,0.020813618806136382,pearson_r=0.020814,True,Kept: association with Default is above the practical cutoff.
+MaritalStatus,nominal,0.019888341388139164,"default_rate_gap=Divorced=0.1249, Married=0.1050, Single=0.1185",True,Kept: association with Default is above the practical cutoff.
+HasMortgage,binary,0.014317182529856545,"default_rate_gap=No=0.1233, Yes=0.1090",True,Kept: association with Default is above the practical cutoff.
+LoanTerm,numeric,0.0011819889316339797,pearson_r=0.001182,False,Dropped: |correlation| with Default is below 0.01. The column does not separate defaulters from non-defaulters.
