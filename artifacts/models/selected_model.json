@@ -40,11 +40,8 @@
     "LoanPurpose_Other"
   ],
   "cv_average_precision": 0.3175024367510335,
+  "threshold": 0.18,
   "keep_engineered_features": true,
   "test_average_precision": 0.32975780069088784,
-  "test_roc_auc": 0.758210918506846,
-  "threshold": 0.18,
-  "test_recall": 0.49249704940145,
-  "test_precision": 0.3001438553226469,
-  "test_f1": 0.37298091042584436
+  "test_roc_auc": 0.758210918506846
 }
