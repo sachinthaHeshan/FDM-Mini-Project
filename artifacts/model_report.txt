@@ -1,0 +1,115 @@
+IT3051 model comparison — loan default classification
+
+1. Algorithms
+   logistic_regression: linear probability of default. L2 penalty is the sklearn default,
+   which is appropriate because loan_to_income, payment_to_income, and the raw amount
+   and income columns overlap.
+   decision_tree: axis-aligned rules. max_depth=12 and min_samples_leaf=50 stop the tree
+   from memorising 200,000 rows. These are starting limits, not a tuned search.
+   random_forest: 100 trees, max_depth=16, min_samples_leaf=10, votes averaged.
+   hist_gradient_boosting: 200 boosting iterations, learning rate 0.1, up to 31 leaves
+   per tree. Each tree fits the mistakes of the ones before it.
+   All four use class_weight='balanced'.
+
+2. Validation
+   Stratified 5-fold cross-validation on the training set only (shuffle, random_state=42).
+   Each classifier is then trained on all training rows and exported.
+   The held-out test set is scored once after that export.
+
+3. How to read the scores
+   A model that always predicts 'no default' is already 88.4% accurate
+   and catches none of the defaults (recall 0). Accuracy is reported so that gap is visible.
+   ROC-AUC and average precision rank applicants by predicted risk and do not use a cutoff.
+   Average precision of a no-skill model equals the default rate (0.116).
+   Precision, recall, and F1 use a 0.5 cutoff. Balanced training pushes recall up and precision
+   down at that cutoff. The cutoff can be moved later without retraining.
+
+4. Cross-validation (mean over 5 training folds)
+                 model  cv_average_precision_mean  cv_roc_auc_mean  cv_recall_mean  cv_precision_mean  cv_f1_mean  cv_accuracy_mean  train_roc_auc_mean
+hist_gradient_boosting                   0.316160         0.751172        0.669420           0.225897    0.337798          0.695223            0.780503
+         random_forest                   0.310645         0.745679        0.532206           0.266648    0.355275          0.775682            0.952751
+   logistic_regression                   0.309583         0.752168        0.687884           0.222407    0.336129          0.684468            0.752497
+         decision_tree                   0.255524         0.691824        0.612934           0.198007    0.299297          0.666683            0.806689
+
+5. Held-out test set (fit on all training rows, scored once)
+                 model  average_precision  roc_auc   recall  precision       f1  balanced_accuracy  accuracy
+   logistic_regression           0.318735 0.758230 0.700219   0.224790 0.340326           0.691466  0.684746
+         decision_tree           0.266076 0.701997 0.640196   0.197781 0.302201           0.649503  0.656648
+         random_forest           0.319773 0.752910 0.553364   0.270012 0.362933           0.678397  0.774388
+hist_gradient_boosting           0.327841 0.757508 0.682853   0.229384 0.343410           0.690714  0.696750
+
+6. Test-set confusion counts at the 0.5 cutoff
+   Rows are actual, columns are predicted. Order: no default, default.
+   logistic_regression
+      true no-default, predicted no-default: 30817
+      true no-default, predicted default:    14322  (applications flagged for review)
+      true default, predicted no-default:    1778  (defaults missed)
+      true default, predicted default:       4153
+   decision_tree
+      true no-default, predicted no-default: 29738
+      true no-default, predicted default:    15401  (applications flagged for review)
+      true default, predicted no-default:    2134  (defaults missed)
+      true default, predicted default:       3797
+   random_forest
+      true no-default, predicted no-default: 36266
+      true no-default, predicted default:    8873  (applications flagged for review)
+      true default, predicted no-default:    2649  (defaults missed)
+      true default, predicted default:       3282
+   hist_gradient_boosting
+      true no-default, predicted no-default: 31533
+      true no-default, predicted default:    13606  (applications flagged for review)
+      true default, predicted no-default:    1881  (defaults missed)
+      true default, predicted default:       4050
+
+7. What the models are using
+   logistic_regression
+    Age: -0.587
+    InterestRate: +0.460
+    loan_to_income: +0.350
+    MonthsEmployed: -0.339
+    HasCoSigner: -0.262
+    HasDependents: -0.256
+    EmploymentType_Full-time: -0.240
+    payment_to_income: +0.218
+   decision_tree
+    Age: 0.2601
+    InterestRate: 0.1794
+    loan_to_income: 0.1746
+    MonthsEmployed: 0.0979
+    Income: 0.0400
+    CreditScore: 0.0393
+    LoanAmount: 0.0380
+    payment_to_income: 0.0319
+   random_forest
+    Age: 0.1817
+    InterestRate: 0.1387
+    loan_to_income: 0.0954
+    MonthsEmployed: 0.0909
+    Income: 0.0772
+    payment_to_income: 0.0731
+    LoanAmount: 0.0597
+    estimated_monthly_payment: 0.0555
+   hist_gradient_boosting
+    Feature importances are not exposed by this estimator.
+
+8. Why the results differ
+   Train ROC-AUC minus validation ROC-AUC. A large gap means the model memorised the training rows.
+   hist_gradient_boosting: train 0.781, validation 0.751, gap 0.029
+   random_forest: train 0.953, validation 0.746, gap 0.207
+   logistic_regression: train 0.752, validation 0.752, gap 0.000
+   decision_tree: train 0.807, validation 0.692, gap 0.115
+   Logistic regression only draws a straight-line boundary in the scaled features.
+   It remains competitive when the main effects (age, interest rate, loan size relative
+   to income) are roughly linear.
+   A single tree can follow thresholds, but one tree is unstable: a small change in the
+   training sample can change the split.
+   A random forest reduces that instability by averaging trees grown on different samples.
+   Gradient boosting usually goes further on this kind of table because later trees focus
+   on applicants the earlier trees scored badly. The train-versus-validation ROC-AUC gap
+   shows whether that extra fit is memorisation or a real gain.
+
+9. Exported model files
+   /Users/sachinthaheshan/Projects/fdm/artifacts/models/logistic_regression.joblib
+   /Users/sachinthaheshan/Projects/fdm/artifacts/models/decision_tree.joblib
+   /Users/sachinthaheshan/Projects/fdm/artifacts/models/random_forest.joblib
+   /Users/sachinthaheshan/Projects/fdm/artifacts/models/hist_gradient_boosting.joblib
