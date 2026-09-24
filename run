@@ -1,0 +1,27 @@
+#!/usr/bin/env bash
+# Prepare the loan-default model if needed, then start the API.
+set -euo pipefail
+cd "$(dirname "$0")"
+
+rebuild=0
+if [[ "${1:-}" == "--rebuild" ]]; then
+  rebuild=1
+elif [[ -n "${1:-}" ]]; then
+  echo "Usage: ./run [--rebuild]" >&2
+  exit 1
+fi
+
+if [[ ! -x .venv/bin/python ]]; then
+  python3.12 -m venv .venv
+  .venv/bin/pip install -r requirements.txt
+fi
+
+if [[ "$rebuild" -eq 1 || ! -f artifacts/preprocessor.joblib ]]; then
+  .venv/bin/python preprocess.py
+fi
+
+if [[ "$rebuild" -eq 1 || ! -f artifacts/models/selected_model.joblib ]]; then
+  .venv/bin/python tune_models.py
+fi
+
+exec .venv/bin/uvicorn backend.main:app --reload
