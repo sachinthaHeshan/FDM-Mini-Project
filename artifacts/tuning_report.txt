@@ -1,0 +1,46 @@
+IT3051 model optimization and final selection
+
+1. Search
+   Randomized search over each model's settings, scored by average precision.
+   Average precision is the selection metric because only about 11.6% of loans default.
+   A full grid would refit hundreds of models on about 200,000 rows, so each model
+   tries at most 12 random combinations.
+   Validation is stratified 3-fold cross-validation on the training set
+   (shuffle, random_state=42). Each fold still trains on about 136,000 rows.
+   The held-out test set is not used to choose the model.
+
+2. Tuned result versus the untuned model (same folds)
+                 model  baseline_cv_average_precision  tuned_cv_average_precision selected_setting  cv_average_precision
+hist_gradient_boosting                       0.315793                    0.317502            tuned              0.317502
+         random_forest                       0.308548                    0.310258            tuned              0.310258
+   logistic_regression                       0.309333                    0.309616            tuned              0.309616
+         decision_tree                       0.253430                    0.274924            tuned              0.274924
+
+3. Settings kept for each model
+   hist_gradient_boosting: tuned parameters {"min_samples_leaf": 20, "max_leaf_nodes": 15, "max_iter": 300, "learning_rate": 0.1, "l2_regularization": 0.0, "class_weight": null}
+   random_forest: tuned parameters {"n_estimators": 100, "min_samples_leaf": 20, "max_features": "sqrt", "max_depth": 12, "class_weight": "balanced"}
+   logistic_regression: tuned parameters {"class_weight": null, "C": 0.01}
+   decision_tree: tuned parameters {"min_samples_leaf": 100, "max_features": null, "max_depth": 8, "class_weight": "balanced"}
+
+4. Engineered features
+   The leading model was scored again with and without loan_to_income,
+   estimated_monthly_payment, and payment_to_income.
+   With those features:    average precision 0.3175
+   Without those features: average precision 0.3177
+   The gap is smaller than 0.005, so the engineered features stay in the final model.
+
+5. Final model
+   hist_gradient_boosting (Histogram gradient boosting)
+   Setting: tuned
+   Cross-validated average precision: 0.3175
+   This is the highest score among the untuned and tuned versions of all four models.
+   Decision cutoff: 0.18.
+   The cutoff maximises F1 on out-of-fold training predictions. A cutoff of 0.50 would
+   rarely flag a default, because this model is not reweighted for the rare class.
+
+6. Test set, scored once after selection
+   Average precision: 0.3298
+   ROC-AUC:           0.7582
+   Recall:            0.4925
+   Precision:         0.3001
+   F1:                0.3730
