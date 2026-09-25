@@ -131,7 +131,7 @@ The imbalance is not “fixed” by copying minority rows in preprocessing. That
 
 ## Visual picture the numbers imply
 
-The project stores the numeric evidence in the preprocessing report and `feature_selection.csv` rather than a separate chart gallery. The distributions to describe in the viva are:
+The written numbers stay in the preprocessing report and `feature_selection.csv`. The same training-split patterns are drawn to `artifacts/figures/` when `preprocess.py` runs. The distributions to describe in the viva are:
 
 - `Default` is a rare class: about one application in nine.
 - Age, income, loan amount, credit score, months employed, interest rate, and DTI are spread across their full allowed ranges, with means near the centre.

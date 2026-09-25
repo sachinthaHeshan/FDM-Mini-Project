@@ -94,6 +94,10 @@ IT3051 preprocessing report — loan default classification
    Train rows: 204277
    Test rows:  51070
    Model matrix columns (27): ['Age', 'Income', 'LoanAmount', 'CreditScore', 'MonthsEmployed', 'NumCreditLines', 'InterestRate', 'DTIRatio', 'loan_to_income', 'estimated_monthly_payment', 'payment_to_income', 'HasMortgage', 'HasDependents', 'HasCoSigner', 'Education', 'EmploymentType_Full-time', 'EmploymentType_Part-time', 'EmploymentType_Self-employed', 'EmploymentType_Unemployed', 'MaritalStatus_Divorced', 'MaritalStatus_Married', 'MaritalStatus_Single', 'LoanPurpose_Auto', 'LoanPurpose_Business', 'LoanPurpose_Education', 'LoanPurpose_Home', 'LoanPurpose_Other']
+   Training-split charts are written to artifacts/figures/: class balance,
+   histograms, box plots before and after the IQR cap, correlation before
+   and after feature selection, numeric association with Default, and
+   default rate by category. The test split is not plotted.
 
 10. Fair-lending note
    Age and marital status are predictive here, and they are also sensitive in

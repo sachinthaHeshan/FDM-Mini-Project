@@ -22,7 +22,7 @@ Preprocessing has to finish first. Training reads the files it writes.
 python preprocess.py
 ```
 
-This reads `dataset/Loan_default.csv` and writes the training and test tables, plus `artifacts/preprocessor.joblib`.
+This reads `dataset/Loan_default.csv` and writes the training and test tables, `artifacts/preprocessor.joblib`, and training-split charts in `artifacts/figures/`.
 
 ## 3. Train the models
 

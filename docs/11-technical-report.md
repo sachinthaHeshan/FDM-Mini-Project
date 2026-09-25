@@ -228,4 +228,4 @@ Nikhil. (n.d.). *Loan Default Prediction Dataset* [Data set]. Kaggle. https://ww
 
 Pedregosa, F., Varoquaux, G., Gramfort, A., Michel, V., Thirion, B., Grisel, O., Blondel, M., Prettenhofer, P., Weiss, R., Dubourg, V., Vanderplas, J., Passos, A., Cournapeau, D., Brucher, M., Perrot, M., & Duchesnay, É. (2011). Scikit-learn: Machine learning in Python. *Journal of Machine Learning Research, 12*, 2825–2830.
 
-Project evidence files: `artifacts/preprocessing_report.txt`, `artifacts/feature_selection.csv`, `artifacts/model_report.txt`, `artifacts/model_comparison_cv.csv`, `artifacts/model_comparison_test.csv`, `artifacts/tuning_report.txt`, `artifacts/tuning_comparison.csv`, `artifacts/models/selected_model.json`.
+Project evidence files: `artifacts/preprocessing_report.txt`, `artifacts/figures/`, `artifacts/feature_selection.csv`, `artifacts/model_report.txt`, `artifacts/model_comparison_cv.csv`, `artifacts/model_comparison_test.csv`, `artifacts/tuning_report.txt`, `artifacts/tuning_comparison.csv`, `artifacts/models/selected_model.json`.

@@ -566,6 +566,10 @@ def write_report(
         f"   Train rows: {len(y_train)}",
         f"   Test rows:  {len(y_test)}",
         f"   Model matrix columns ({len(feature_names)}): {feature_names}",
+        "   Training-split charts are written to artifacts/figures/: class balance,",
+        "   histograms, box plots before and after the IQR cap, correlation before",
+        "   and after feature selection, numeric association with Default, and",
+        "   default rate by category. The test split is not plotted.",
         "",
         "10. Fair-lending note",
         "   Age and marital status are predictive here, and they are also sensitive in",
@@ -640,7 +644,16 @@ def main() -> None:
     print("Features dropped:")
     dropped = preprocessor.selection_report_.loc[~preprocessor.selection_report_["keep"], ["feature", "detail"]]
     print(dropped.to_string(index=False) if len(dropped) else "  none")
+    from preprocessing_figures import save_preprocessing_figures
+
+    figure_paths = save_preprocessing_figures(
+        args.output / "figures",
+        x_train=x_train,
+        y_train=y_train,
+        selection=preprocessor.selection_report_,
+    )
     print(f"Wrote prepared data to {args.output}")
+    print(f"Wrote {len(figure_paths)} charts to {args.output / 'figures'}")
 
 
 if __name__ == "__main__":
