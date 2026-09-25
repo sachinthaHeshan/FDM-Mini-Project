@@ -8,7 +8,7 @@ Command:
 python preprocess.py
 ```
 
-Outputs: `artifacts/X_train.csv`, `X_test.csv`, `y_train.csv`, `y_test.csv`, `feature_selection.csv`, `preprocessor.joblib`, `preprocessing_report.txt`.
+Outputs: `artifacts/X_train.csv`, `X_test.csv`, `y_train.csv`, `y_test.csv`, `feature_selection.csv`, `preprocessor.joblib`, `preprocessing_report.txt`, and the training-split charts in `artifacts/figures/`.
 
 ## Split first, so nothing leaks
 
@@ -121,6 +121,22 @@ Kept (training evidence in `artifacts/feature_selection.csv`):
 Dropped from the model matrix: **`LoanTerm`** (training r = 0.0012). The officer still enters the term. It is used to calculate the monthly payment, then left out of the matrix because the term by itself does not change the default rate.
 
 The fitted matrix has **27 columns** after one-hot encoding (11 numeric + 3 binary + 1 education + 4 employment + 3 marital status + 5 loan purpose).
+
+## Charts
+
+The same run writes PNG charts for the training split only. Matplotlib uses the Agg backend, so the script saves files and does not open a window. The test rows are not drawn. The charts are diagnostics; they are not part of `preprocessor.joblib`.
+
+| File | What it shows |
+| --- | --- |
+| `01_class_balance.png` | Count and share of default vs no default |
+| `02_histograms_raw.png` | Raw numeric columns, split by default |
+| `03_histograms_engineered.png` | The three ratios before the IQR cap, split by default |
+| `04_boxplots_before_cap.png` | Min-to-max box plots, with the training 1.5×IQR fence drawn where it cuts the data |
+| `05_boxplots_after_cap.png` | The same columns after clipping, on the same axis limits |
+| `06_correlation_before.png` | Correlation of every numeric candidate with each other and with `Default` |
+| `07_correlation_after.png` | The same heatmap after dropping numeric columns below the cutoff |
+| `08_target_correlation.png` | \|Pearson r\| with `Default`, and the 0.01 keep line |
+| `09_default_rate_by_category.png` | Default rate by category level, with the training base rate and the keep/drop gap |
 
 ## Class imbalance is not “preprocessed away”
 

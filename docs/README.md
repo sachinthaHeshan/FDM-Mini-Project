@@ -36,6 +36,7 @@ streamlit run frontend/app.py
 Written evidence already produced by those scripts:
 
 - `artifacts/preprocessing_report.txt`
+- `artifacts/figures/` (training-split charts from `preprocess.py`)
 - `artifacts/feature_selection.csv`
 - `artifacts/model_report.txt`
 - `artifacts/model_comparison_cv.csv`
