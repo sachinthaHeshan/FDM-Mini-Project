@@ -20,6 +20,8 @@ from pathlib import Path
 import joblib
 import numpy as np
 import pandas as pd
+from imblearn.over_sampling import RandomOverSampler
+from imblearn.pipeline import Pipeline as ImbalancedPipeline
 from sklearn.base import clone
 from sklearn.metrics import f1_score
 from sklearn.model_selection import ParameterGrid, RandomizedSearchCV, StratifiedKFold, cross_val_predict, cross_validate
@@ -50,31 +52,42 @@ MODEL_NAMES = {
 
 SEARCH_SPACES = {
     "logistic_regression": {
-        "C": [0.01, 0.1, 1.0, 10.0, 100.0],
-        "class_weight": ["balanced", None],
+        "model__C": [0.01, 0.1, 1.0, 10.0, 100.0],
     },
     "decision_tree": {
-        "max_depth": [6, 8, 12, 16, None],
-        "min_samples_leaf": [20, 50, 100, 200],
-        "max_features": [None, "sqrt"],
-        "class_weight": ["balanced", None],
+        "model__max_depth": [6, 8, 12, 16, None],
+        "model__min_samples_leaf": [20, 50, 100, 200],
+        "model__max_features": [None, "sqrt"],
     },
     "random_forest": {
-        "n_estimators": [100, 200],
-        "max_depth": [12, 16, 24],
-        "min_samples_leaf": [5, 10, 20],
-        "max_features": ["sqrt", 0.5],
-        "class_weight": ["balanced", None],
+        "model__n_estimators": [100, 200],
+        "model__max_depth": [12, 16, 24],
+        "model__min_samples_leaf": [5, 10, 20],
+        "model__max_features": ["sqrt", 0.5],
     },
     "hist_gradient_boosting": {
-        "learning_rate": [0.05, 0.1, 0.2],
-        "max_iter": [100, 200, 300],
-        "max_leaf_nodes": [15, 31, 63],
-        "min_samples_leaf": [20, 50],
-        "l2_regularization": [0.0, 1.0],
-        "class_weight": ["balanced", None],
+        "model__learning_rate": [0.05, 0.1, 0.2],
+        "model__max_iter": [100, 200, 300],
+        "model__max_leaf_nodes": [15, 31, 63],
+        "model__min_samples_leaf": [20, 50],
+        "model__l2_regularization": [0.0, 1.0],
     },
 }
+
+
+def build_oversampled_estimator(name: str, estimator) -> ImbalancedPipeline:
+    """Balance only the data passed to fit; prediction keeps the original rows."""
+    model = clone(estimator)
+    if "class_weight" in model.get_params():
+        model.set_params(class_weight=None)
+    if name == "random_forest":
+        model.set_params(n_jobs=1)
+    return ImbalancedPipeline(
+        steps=[
+            ("sampler", RandomOverSampler(random_state=RANDOM_STATE)),
+            ("model", model),
+        ]
+    )
 
 
 def search_iterations(name: str) -> int:
@@ -95,13 +108,11 @@ def cv_average_precision(estimator, x_train: pd.DataFrame, y_train: np.ndarray, 
 
 
 def tune_one(name: str, x_train: pd.DataFrame, y_train: np.ndarray, folds) -> dict:
-    baseline = clone(build_models()[name])
+    baseline = build_oversampled_estimator(name, build_models()[name])
     print(f"Scoring baseline {name} ...", flush=True)
     baseline_ap = cv_average_precision(baseline, x_train, y_train, folds)
 
     candidate = clone(baseline)
-    if name == "random_forest":
-        candidate.set_params(n_jobs=1)
 
     iterations = search_iterations(name)
     print(f"Tuning {name} with {iterations} random settings, {N_SPLITS} folds ...", flush=True)
@@ -182,7 +193,9 @@ def write_report(
         "IT3051 model optimization and final selection",
         "",
         "1. Search",
-        "   Randomized search over each model's settings, scored by average precision.",
+        "   Random oversampling balances only each cross-validation training fold.",
+        "   Validation and held-out test rows retain the original class distribution.",
+        "   Randomized search over each oversampled model's settings, scored by average precision.",
         "   Average precision is the selection metric because only about 11.6% of loans default.",
         "   A full grid would refit hundreds of models on about 200,000 rows, so each model",
         f"   tries at most {max(SEARCH_ITERATIONS.values())} random combinations.",
@@ -235,8 +248,7 @@ def write_report(
             f"   Cross-validated average precision: {winner['cv_average_precision']:.4f}",
             "   This is the highest score among the untuned and tuned versions of all four models.",
             f"   Decision cutoff: {winner['threshold']:.2f}.",
-            "   The cutoff maximises F1 on out-of-fold training predictions. A cutoff of 0.50 would",
-            "   rarely flag a default, because this model is not reweighted for the rare class.",
+            "   The cutoff maximises F1 on out-of-fold training predictions after oversampling.",
             "",
             "6. Test set, scored once after selection",
             f"   Average precision: {test_metrics['average_precision']:.4f}",
@@ -288,8 +300,8 @@ def main() -> None:
     features = feature_check["features"]
     winner["threshold"] = choose_threshold(winner["estimator"], x_train[features], y_train, folds)
     final_model = clone(winner["estimator"])
-    if "n_jobs" in final_model.get_params():
-        final_model.set_params(n_jobs=-1)
+    if "model__n_jobs" in final_model.get_params():
+        final_model.set_params(model__n_jobs=-1)
     print(f"Fitting final {winner['model']} on the full training set ...", flush=True)
     final_model.fit(x_train[features], y_train)
 
